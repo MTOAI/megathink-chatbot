@@ -62,12 +62,14 @@ const cache = new Map<string, string>();
 async function generateReply(prompt: string) {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "Content-Type": "application/json",
-    },
+headers: {
+  Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+  "Content-Type": "application/json",
+  "HTTP-Referer": "https://your-vercel-app.vercel.app", // ✅ REQUIRED
+  "X-Title": "MegaThink Chatbot", // ✅ REQUIRED
+},
     body: JSON.stringify({
-      model: "mistralai/mistral-7b-instruct:free", // ✅ FREE
+      model: "openchat/openchat-7b:free", // ✅ FREE
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt },
