@@ -1,3 +1,4 @@
+console.log("✅ OPENROUTER CLEAN VERSION");
 import { NextRequest, NextResponse } from "next/server";
 import tutorsData from "@/data/tutors.json";
 import siteData from "@/data/site.json";
