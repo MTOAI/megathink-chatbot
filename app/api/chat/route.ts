@@ -103,24 +103,25 @@ export async function POST(req: NextRequest) {
       generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
     });
 
-    // 1. Map incoming frontend roles to acceptable Gemini roles ('model' or 'user')
-    const history = messages.slice(0, -1).map(m => ({
-      role: (m.role === "assistant" || m.role === "model") ? "model" : "user",
-      parts: [{ text: m.content }],
-    }));
+    // THE WORKAROUND: Flatten chat log into plain text conversation history
+    // This side-steps all role/index verification requirements from the SDK
+    const structuredConversation = messages
+      .map(m => {
+        const identity = (m.role === "assistant" || m.role === "model" || m.role === "system") ? "MegaBot" : "User";
+        return `${identity}: ${m.content}`;
+      })
+      .join("\n\n");
 
-    // 2. THE FIX: If the history starts with a 'model' greeting, strip it out.
-    // Gemini requires the history array to explicitly start with a 'user' turn.
-    while (history.length > 0 && history[0].role === "model") {
-      history.shift();
-    }
+    const promptPayload = `
+      Below is the continuous conversation history between the User and MegaBot, ending with the User's newest statement. Generate the next logical reply for MegaBot matching your instructions.
 
-    // 3. Initialize chat with the sanitized history context
-    const chat = model.startChat({ history });
-    
-    // 4. Send the user's latest message text
-    const latestMessage = messages[messages.length - 1].content;
-    const result = await chat.sendMessage(latestMessage);
+      ${structuredConversation}
+      
+      MegaBot:
+    `;
+
+    // Fire as a raw generation payload instead of starting a structured chat session
+    const result = await model.generateContent(promptPayload);
 
     return NextResponse.json(
       { reply: result.response.text() },
